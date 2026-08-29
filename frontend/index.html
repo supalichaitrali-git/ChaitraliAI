@@ -1,0 +1,2986 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+<title>ChaitraliAI - AI Voice Interview Agent</title>
+
+<style>
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    :root {
+        --bg: #faf7fc;
+        --bg-soft: #f5eff9;
+
+        --card: rgba(255, 255, 255, 0.78);
+        --card-solid: #ffffff;
+
+        --primary: #9b8bc4;
+        --primary-dark: #75639f;
+        --primary-soft: #e9e1f5;
+
+        --pink: #e7b7c9;
+        --pink-soft: #f8e9ef;
+
+        --blue-soft: #e4edf8;
+        --green: #8ebda5;
+
+        --text: #332d3d;
+        --muted: #81798d;
+        --light-text: #aaa1b2;
+
+        --border: rgba(117, 99, 159, 0.14);
+
+        --shadow:
+            0 25px 70px rgba(100, 80, 120, 0.13);
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        min-height: 100vh;
+
+        font-family:
+            Inter,
+            ui-sans-serif,
+            system-ui,
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            sans-serif;
+
+        color: var(--text);
+
+        background:
+            radial-gradient(
+                circle at 10% 10%,
+                rgba(231, 183, 201, 0.30),
+                transparent 28%
+            ),
+            radial-gradient(
+                circle at 90% 20%,
+                rgba(205, 193, 231, 0.34),
+                transparent 30%
+            ),
+            radial-gradient(
+                circle at 50% 100%,
+                rgba(190, 216, 231, 0.25),
+                transparent 35%
+            ),
+            var(--bg);
+
+        overflow-x: hidden;
+    }
+
+    .background {
+        position: fixed;
+        inset: 0;
+
+        overflow: hidden;
+        pointer-events: none;
+
+        z-index: -1;
+    }
+
+    .blob {
+        position: absolute;
+
+        border-radius: 50%;
+
+        filter: blur(5px);
+        opacity: 0.5;
+
+        animation:
+            floatBlob
+            12s
+            infinite
+            ease-in-out;
+    }
+
+    .blob.one {
+        width: 330px;
+        height: 330px;
+
+        background: #f3dbe5;
+
+        top: -140px;
+        left: -100px;
+    }
+
+    .blob.two {
+        width: 380px;
+        height: 380px;
+
+        background: #ded5f0;
+
+        top: 25%;
+        right: -180px;
+
+        animation-delay: -4s;
+    }
+
+    .blob.three {
+        width: 280px;
+        height: 280px;
+
+        background: #dcebf1;
+
+        bottom: -130px;
+        left: 25%;
+
+        animation-delay: -7s;
+    }
+
+    @keyframes floatBlob {
+
+        0%,
+        100% {
+            transform:
+                translate3d(0, 0, 0)
+                scale(1);
+        }
+
+        50% {
+            transform:
+                translate3d(25px, -30px, 0)
+                scale(1.08);
+        }
+    }
+
+    .page {
+        width: 100%;
+        min-height: 100vh;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .navbar {
+        width: 100%;
+        max-width: 1120px;
+
+        padding: 25px 28px;
+
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .brand-icon {
+        width: 43px;
+        height: 43px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 14px;
+
+        background:
+            linear-gradient(
+                135deg,
+                #c7b7df,
+                #e9c6d5
+            );
+
+        color: white;
+
+        font-size: 20px;
+
+        box-shadow:
+            0 10px 30px
+            rgba(120, 95, 150, 0.18);
+    }
+
+    .brand-name {
+        font-size: 18px;
+        font-weight: 750;
+
+        letter-spacing: -0.4px;
+    }
+
+    .brand-subtitle {
+        font-size: 11px;
+
+        color: var(--muted);
+
+        margin-top: 2px;
+    }
+
+    .voice-ready {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+
+        padding: 8px 13px;
+
+        border-radius: 30px;
+
+        background:
+            rgba(255, 255, 255, 0.65);
+
+        border:
+            1px solid
+            var(--border);
+
+        color: var(--muted);
+
+        font-size: 11px;
+
+        backdrop-filter: blur(12px);
+    }
+
+    .ready-dot {
+        width: 7px;
+        height: 7px;
+
+        border-radius: 50%;
+
+        background: var(--green);
+
+        box-shadow:
+            0 0 10px
+            rgba(142, 189, 165, 0.6);
+    }
+
+    .landing {
+        width: 100%;
+        max-width: 980px;
+
+        min-height:
+            calc(100vh - 100px);
+
+        display: flex;
+        flex-direction: column;
+
+        align-items: center;
+        justify-content: center;
+
+        text-align: center;
+
+        padding: 40px 20px 100px;
+    }
+
+    .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+
+        padding: 8px 14px;
+
+        border-radius: 30px;
+
+        background:
+            rgba(255, 255, 255, 0.65);
+
+        border:
+            1px solid
+            var(--border);
+
+        color: var(--primary-dark);
+
+        font-size: 12px;
+
+        margin-bottom: 24px;
+
+        box-shadow:
+            0 8px 25px
+            rgba(100, 80, 120, 0.06);
+    }
+
+    .eyebrow span {
+        width: 6px;
+        height: 6px;
+
+        border-radius: 50%;
+
+        background: var(--pink);
+    }
+
+    .landing h1 {
+        max-width: 800px;
+
+        font-size:
+            clamp(
+                42px,
+                7vw,
+                76px
+            );
+
+        line-height: 1.02;
+
+        letter-spacing: -3px;
+
+        font-weight: 750;
+
+        color: var(--text);
+    }
+
+    .landing h1 span {
+        background:
+            linear-gradient(
+                120deg,
+                #8d78b7,
+                #c78fa8
+            );
+
+        -webkit-background-clip: text;
+        background-clip: text;
+
+        color: transparent;
+    }
+
+    .landing p {
+        max-width: 590px;
+
+        margin-top: 22px;
+
+        color: var(--muted);
+
+        font-size: 16px;
+
+        line-height: 1.7;
+    }
+
+    .begin-button {
+        margin-top: 34px;
+
+        padding: 15px 25px;
+
+        border: none;
+        border-radius: 16px;
+
+        background:
+            linear-gradient(
+                135deg,
+                #9e8bc2,
+                #c99aae
+            );
+
+        color: white;
+
+        font-family: inherit;
+
+        font-size: 14px;
+        font-weight: 700;
+
+        cursor: pointer;
+
+        box-shadow:
+            0 15px 35px
+            rgba(135, 105, 160, 0.22);
+
+        transition:
+            transform 0.25s ease,
+            box-shadow 0.25s ease;
+    }
+
+    .begin-button:hover {
+        transform: translateY(-3px);
+
+        box-shadow:
+            0 20px 45px
+            rgba(135, 105, 160, 0.28);
+    }
+
+    .begin-button:active {
+        transform: translateY(0);
+    }
+
+    .scroll-hint {
+        margin-top: 65px;
+
+        color: var(--light-text);
+
+        font-size: 11px;
+
+        animation:
+            bounce
+            2s
+            infinite;
+    }
+
+    .scroll-arrow {
+        display: block;
+
+        margin-top: 8px;
+
+        font-size: 17px;
+    }
+
+    @keyframes bounce {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(7px);
+        }
+    }
+
+    .interview-section {
+        width: 100%;
+
+        display: flex;
+        justify-content: center;
+
+        padding: 80px 20px;
+    }
+
+    .app {
+        width: 100%;
+        max-width: 980px;
+
+        background: var(--card);
+
+        border:
+            1px solid
+            rgba(255, 255, 255, 0.8);
+
+        border-radius: 32px;
+
+        padding: 34px;
+
+        box-shadow: var(--shadow);
+
+        backdrop-filter: blur(22px);
+
+        position: relative;
+
+        overflow: hidden;
+    }
+
+    .app::before {
+        content: "";
+
+        position: absolute;
+
+        top: 0;
+        left: 10%;
+        right: 10%;
+
+        height: 2px;
+
+        background:
+            linear-gradient(
+                90deg,
+                transparent,
+                #d3bfdc,
+                #e9c2d0,
+                transparent
+            );
+    }
+
+    .interview-header {
+        display: flex;
+
+        align-items: center;
+        justify-content: space-between;
+
+        margin-bottom: 15px;
+    }
+
+    .interview-title {
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .interview-subtitle {
+        color: var(--muted);
+
+        font-size: 11px;
+
+        margin-top: 3px;
+    }
+
+    .hero {
+        text-align: center;
+
+        padding: 18px 0 0;
+    }
+
+    .hero h2 {
+        font-size:
+            clamp(
+                27px,
+                4vw,
+                42px
+            );
+
+        letter-spacing: -1.4px;
+
+        color: var(--text);
+    }
+
+    .hero h2 span {
+        color: var(--primary-dark);
+    }
+
+    .hero p {
+        color: var(--muted);
+
+        margin-top: 8px;
+
+        font-size: 13px;
+    }
+
+    .orb-area {
+        height: 270px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        position: relative;
+    }
+
+    .orb-glow {
+        position: absolute;
+
+        width: 235px;
+        height: 235px;
+
+        border-radius: 50%;
+
+        background:
+            radial-gradient(
+                circle,
+                rgba(190, 164, 215, 0.26),
+                transparent 68%
+            );
+
+        filter: blur(5px);
+
+        opacity: 0.45;
+
+        transition:
+            all 0.5s ease;
+
+        z-index: 0;
+    }
+
+    .orb-ring {
+        position: absolute;
+
+        width: 205px;
+        height: 205px;
+
+        border-radius: 50%;
+
+        border:
+            1px solid
+            rgba(155, 139, 196, 0.18);
+
+        box-shadow:
+            0 0 50px
+            rgba(155, 139, 196, 0.08);
+
+        transition:
+            all 0.5s ease;
+
+        z-index: 1;
+    }
+
+    .orb-ring::before {
+        content: "";
+
+        position: absolute;
+
+        inset: 13px;
+
+        border-radius: 50%;
+
+        border:
+            1px dashed
+            rgba(199, 166, 195, 0.22);
+    }
+
+    .orb {
+        width: 145px;
+        height: 145px;
+
+        border-radius: 50%;
+
+        position: relative;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background:
+            radial-gradient(
+                circle at 32% 23%,
+                #ffffff 0%,
+                #eee6f6 12%,
+                #d4c5e7 28%,
+                #b39bcf 53%,
+                #9079b4 78%,
+                #78629c 100%
+            );
+
+        box-shadow:
+            0 20px 45px
+            rgba(125, 100, 150, 0.25),
+
+            0 0 90px
+            rgba(183, 155, 205, 0.18),
+
+            inset
+            -15px
+            -18px
+            28px
+            rgba(100, 75, 125, 0.18);
+
+        z-index: 2;
+
+        transition:
+            transform 0.35s ease,
+            box-shadow 0.35s ease;
+    }
+
+    .orb::before {
+        content: "";
+
+        position: absolute;
+
+        inset: 8px;
+
+        border-radius: 50%;
+
+        border:
+            1px solid
+            rgba(255, 255, 255, 0.55);
+    }
+
+    .orb::after {
+        content: "";
+
+        position: absolute;
+
+        width: 30px;
+        height: 15px;
+
+        border-radius: 50%;
+
+        background:
+            rgba(255, 255, 255, 0.5);
+
+        filter: blur(7px);
+
+        top: 20px;
+        left: 30px;
+
+        transform: rotate(-25deg);
+    }
+
+    .orb-symbol {
+        font-size: 37px;
+
+        color: white;
+
+        text-shadow:
+            0 0 20px
+            rgba(255, 255, 255, 0.8);
+
+        z-index: 2;
+    }
+
+    .orb.listening {
+        animation:
+            listening
+            1.3s
+            infinite
+            ease-in-out;
+    }
+
+    .orb-ring.listening {
+        animation:
+            ringPulse
+            1.3s
+            infinite
+            ease-in-out;
+    }
+
+    .orb-glow.listening {
+        animation:
+            glowPulse
+            1.3s
+            infinite
+            ease-in-out;
+    }
+
+    @keyframes listening {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.075);
+        }
+    }
+
+    @keyframes ringPulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+            opacity: 0.6;
+        }
+
+        50% {
+            transform: scale(1.1);
+            opacity: 1;
+        }
+    }
+
+    @keyframes glowPulse {
+
+        0%,
+        100% {
+            transform: scale(0.95);
+            opacity: 0.45;
+        }
+
+        50% {
+            transform: scale(1.15);
+            opacity: 0.8;
+        }
+    }
+
+    .orb.thinking {
+        animation:
+            thinking
+            2.5s
+            infinite
+            linear;
+    }
+
+    @keyframes thinking {
+
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .orb.speaking {
+        animation:
+            speaking
+            0.75s
+            infinite
+            alternate
+            ease-in-out;
+    }
+
+    @keyframes speaking {
+
+        from {
+            transform: scale(1);
+        }
+
+        to {
+            transform: scale(1.07);
+        }
+    }
+
+    .status-wrapper {
+        text-align: center;
+
+        margin-bottom: 18px;
+    }
+
+    .status {
+        display: inline-flex;
+
+        align-items: center;
+
+        gap: 8px;
+
+        padding: 8px 14px;
+
+        border-radius: 20px;
+
+        background:
+            rgba(255, 255, 255, 0.6);
+
+        border:
+            1px solid
+            var(--border);
+
+        color: var(--muted);
+
+        font-size: 12px;
+
+        box-shadow:
+            0 7px 20px
+            rgba(100, 80, 120, 0.05);
+    }
+
+    .status-dot {
+        width: 7px;
+        height: 7px;
+
+        border-radius: 50%;
+
+        background:
+            var(--primary);
+
+        transition:
+            background 0.25s ease;
+    }
+
+    .chat {
+        height: 230px;
+
+        overflow-y: auto;
+
+        padding: 18px;
+
+        border-radius: 20px;
+
+        background:
+            rgba(250, 247, 252, 0.72);
+
+        border:
+            1px solid
+            var(--border);
+
+        scrollbar-width: thin;
+
+        scrollbar-color:
+            #c7bad7
+            transparent;
+
+        margin-bottom: 17px;
+    }
+
+    .message {
+        max-width: 82%;
+
+        margin-bottom: 12px;
+
+        padding: 12px 15px;
+
+        border-radius: 16px;
+
+        line-height: 1.55;
+
+        font-size: 13px;
+
+        white-space: pre-wrap;
+
+        animation:
+            messageIn
+            0.25s
+            ease;
+    }
+
+    @keyframes messageIn {
+
+        from {
+            opacity: 0;
+            transform: translateY(7px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .message strong {
+        font-size: 10px;
+
+        display: block;
+
+        margin-bottom: 4px;
+
+        letter-spacing: 0.4px;
+
+        text-transform: uppercase;
+    }
+
+    .user {
+        margin-left: auto;
+
+        background:
+            linear-gradient(
+                135deg,
+                #eee6f6,
+                #f6e8ee
+            );
+
+        border:
+            1px solid
+            rgba(155, 139, 196, 0.15);
+
+        color: #554d60;
+    }
+
+    .user strong {
+        color: var(--primary-dark);
+    }
+
+    .bot {
+        margin-right: auto;
+
+        background:
+            rgba(255, 255, 255, 0.88);
+
+        border:
+            1px solid
+            rgba(150, 130, 165, 0.12);
+
+        color: #514a58;
+
+        box-shadow:
+            0 5px 15px
+            rgba(100, 80, 120, 0.04);
+    }
+
+    .bot strong {
+        color: #8a719d;
+    }
+
+    .system {
+        margin: 0 auto;
+
+        text-align: center;
+
+        color: #a86f7d;
+
+        background: #fae9ee;
+
+        border:
+            1px solid
+            #efd1db;
+    }
+
+    .input-area {
+        display: flex;
+
+        gap: 10px;
+
+        margin-bottom: 11px;
+    }
+
+    .input-wrapper {
+        flex: 1;
+    }
+
+    .input-wrapper input {
+        width: 100%;
+
+        height: 49px;
+
+        padding: 0 17px;
+
+        border-radius: 14px;
+
+        border:
+            1px solid
+            rgba(130, 110, 150, 0.14);
+
+        background:
+            rgba(255, 255, 255, 0.78);
+
+        color: var(--text);
+
+        outline: none;
+
+        font-size: 13px;
+
+        font-family: inherit;
+
+        transition:
+            border 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .input-wrapper input::placeholder {
+        color: #aaa1b2;
+    }
+
+    .input-wrapper input:focus {
+        border-color:
+            rgba(155, 139, 196, 0.45);
+
+        box-shadow:
+            0 0 0 3px
+            rgba(155, 139, 196, 0.08);
+    }
+
+    button {
+        border: none;
+
+        cursor: pointer;
+
+        font-family: inherit;
+
+        transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease,
+            opacity 0.2s ease;
+    }
+
+    button:hover {
+        transform: translateY(-1px);
+    }
+
+    button:active {
+        transform: translateY(0);
+    }
+
+    button:disabled {
+        opacity: 0.5;
+
+        cursor: not-allowed;
+
+        transform: none;
+    }
+
+    .ask-btn {
+        min-width: 76px;
+
+        border-radius: 14px;
+
+        background:
+            linear-gradient(
+                135deg,
+                #9b89c0,
+                #bd92a7
+            );
+
+        color: white;
+
+        font-weight: 650;
+
+        box-shadow:
+            0 8px 25px
+            rgba(120, 90, 140, 0.15);
+    }
+
+    .start-btn {
+        width: 100%;
+
+        height: 54px;
+
+        border-radius: 15px;
+
+        background:
+            linear-gradient(
+                135deg,
+                #9c89bd,
+                #c497aa
+            );
+
+        color: white;
+
+        font-weight: 700;
+
+        font-size: 13px;
+
+        box-shadow:
+            0 12px 30px
+            rgba(125, 95, 145, 0.18);
+
+        margin-bottom: 10px;
+    }
+
+    .start-btn:hover {
+        box-shadow:
+            0 16px 40px
+            rgba(125, 95, 145, 0.25);
+    }
+
+    .reset-btn {
+        width: 100%;
+
+        height: 43px;
+
+        border-radius: 13px;
+
+        background:
+            rgba(255, 255, 255, 0.55);
+
+        color: #918899;
+
+        border:
+            1px solid
+            rgba(130, 110, 150, 0.13);
+
+        font-size: 12px;
+    }
+
+    .reset-btn:hover {
+        color: var(--primary-dark);
+
+        border-color:
+            rgba(155, 139, 196, 0.3);
+    }
+
+    .hint {
+        text-align: center;
+
+        color: #aaa1b2;
+
+        font-size: 10px;
+
+        margin-top: 13px;
+    }
+
+    .footer {
+        text-align: center;
+
+        color: #aaa1b2;
+
+        font-size: 10px;
+
+        margin-top: 15px;
+
+        letter-spacing: 0.2px;
+    }
+
+    @media (max-width: 650px) {
+
+        .navbar {
+            padding: 18px 15px;
+        }
+
+        .voice-ready {
+            display: none;
+        }
+
+        .landing {
+            padding:
+                30px 18px 80px;
+        }
+
+        .landing h1 {
+            font-size: 43px;
+
+            letter-spacing: -2px;
+        }
+
+        .landing p {
+            font-size: 14px;
+        }
+
+        .interview-section {
+            padding:
+                45px 10px 50px;
+        }
+
+        .app {
+            padding:
+                24px 16px;
+
+            border-radius: 24px;
+        }
+
+        .hero h2 {
+            font-size: 29px;
+        }
+
+        .orb-area {
+            height: 235px;
+        }
+
+        .orb {
+            width: 130px;
+            height: 130px;
+        }
+
+        .orb-ring {
+            width: 185px;
+            height: 185px;
+        }
+
+        .orb-glow {
+            width: 210px;
+            height: 210px;
+        }
+
+        .chat {
+            height: 250px;
+        }
+
+        .input-area {
+            flex-direction: column;
+        }
+
+        .ask-btn {
+            height: 47px;
+        }
+
+        .message {
+            max-width: 90%;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+        *,
+        *::before,
+        *::after {
+            animation-duration:
+                0.01ms !important;
+
+            animation-iteration-count:
+                1 !important;
+
+            scroll-behavior:
+                auto !important;
+        }
+    }
+
+</style>
+
+
+</head>
+
+<body>
+
+
+<div class="background">
+
+    <div class="blob one"></div>
+    <div class="blob two"></div>
+    <div class="blob three"></div>
+
+</div>
+
+<div class="page">
+
+    <div class="navbar">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                ✦
+            </div>
+
+            <div>
+
+                <div class="brand-name">
+                    ChaitraliAI
+                </div>
+
+                <div class="brand-subtitle">
+                    Personal AI Interview Agent
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="voice-ready">
+
+            <span class="ready-dot"></span>
+
+            Voice Ready
+
+        </div>
+
+    </div>
+
+    <section
+        class="landing"
+        id="landing"
+    >
+
+        <div class="eyebrow">
+
+            <span></span>
+
+            AI-powered interview experience
+
+        </div>
+
+        <h1>
+
+            Your interview.
+
+            <br>
+
+            <span>
+                Just speak naturally.
+            </span>
+
+        </h1>
+
+        <p>
+
+            Meet ChaitraliAI — a personal AI interview
+            agent designed to listen, understand, and
+            respond as Chaitrali Supali.
+
+        </p>
+
+        <button
+            class="begin-button"
+            id="beginButton"
+            type="button"
+        >
+
+            Begin Interview
+            &nbsp; →
+
+        </button>
+
+        <div class="scroll-hint">
+
+            Your AI interviewer is waiting
+
+            <span class="scroll-arrow">
+                ↓
+            </span>
+
+        </div>
+
+    </section>
+
+    <section
+        class="interview-section"
+        id="interview"
+    >
+
+        <div class="app">
+
+            <div class="interview-header">
+
+                <div>
+
+                    <div class="interview-title">
+                        Voice Interview
+                    </div>
+
+                    <div class="interview-subtitle">
+                        Take your time. Answer naturally.
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="hero">
+
+                <h2>
+
+                    Let's begin your
+                    <span>
+                        interview.
+                    </span>
+
+                </h2>
+
+                <p>
+                    I'll listen, think, and respond.
+                </p>
+
+            </div>
+
+            <div class="orb-area">
+
+                <div
+                    class="orb-glow"
+                    id="orbGlow"
+                ></div>
+
+                <div
+                    class="orb-ring"
+                    id="orbRing"
+                ></div>
+
+                <div
+                    class="orb"
+                    id="orb"
+                >
+
+                    <span class="orb-symbol">
+                        ✦
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="status-wrapper">
+
+                <div class="status">
+
+                    <span
+                        class="status-dot"
+                        id="statusDot"
+                    ></span>
+
+                    <span id="status">
+                        Ready to begin
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div
+                class="chat"
+                id="chat"
+            >
+
+                <div class="message bot">
+
+                    <strong>
+                        Chaitrali Supali
+                    </strong>
+
+                    <span>
+                        Welcome. Start the interview whenever you're ready.
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="input-area">
+
+                <div class="input-wrapper">
+
+                    <input
+                        type="text"
+                        id="question"
+                        placeholder="Type your question instead..."
+                        autocomplete="off"
+                    >
+
+                </div>
+
+                <button
+                    class="ask-btn"
+                    id="askButton"
+                    type="button"
+                >
+                    Ask
+                </button>
+
+            </div>
+
+            <button
+                class="start-btn"
+                id="startButton"
+                type="button"
+            >
+                Start Voice Interview
+            </button>
+
+            <button
+                class="reset-btn"
+                id="resetButton"
+                type="button"
+            >
+                Start New Interview
+            </button>
+
+            <div class="hint">
+
+                Voice interview uses your browser microphone
+                and speech recognition.
+
+            </div>
+
+            <div class="footer">
+
+                ChaitraliAI · FastAPI · Gemini
+
+            </div>
+
+        </div>
+
+    </section>
+
+</div>
+
+<script>
+
+    /* =====================================================
+       CONFIGURATION
+    ===================================================== */
+
+    const BACKEND_URL =
+        "http://127.0.0.1:8000";
+
+
+    /* =====================================================
+       DOM ELEMENTS
+    ===================================================== */
+
+    const questionInput =
+        document.getElementById("question");
+
+    const chat =
+        document.getElementById("chat");
+
+    const statusText =
+        document.getElementById("status");
+
+    const statusDot =
+        document.getElementById("statusDot");
+
+    const orb =
+        document.getElementById("orb");
+
+    const orbRing =
+        document.getElementById("orbRing");
+
+    const orbGlow =
+        document.getElementById("orbGlow");
+
+    const startButton =
+        document.getElementById("startButton");
+
+    const resetButton =
+        document.getElementById("resetButton");
+
+    const askButton =
+        document.getElementById("askButton");
+
+    const beginButton =
+        document.getElementById("beginButton");
+
+    const interviewSection =
+        document.getElementById("interview");
+
+
+    /* =====================================================
+       STATE
+    ===================================================== */
+
+    let recognition = null;
+
+    let interviewActive = false;
+
+    let isListening = false;
+
+    let isSpeaking = false;
+
+    let requestInProgress = false;
+
+    let greetingShown = false;
+
+    let recognitionGeneration = 0;
+
+    let listeningTimer = null;
+
+
+    /* =====================================================
+       BROWSER SUPPORT
+    ===================================================== */
+
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+
+    /* =====================================================
+       BEGIN EXPERIENCE
+    ===================================================== */
+
+    function beginExperience() {
+
+        interviewSection.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+
+        setTimeout(
+            () => {
+
+                if (!interviewActive) {
+                    startInterview();
+                }
+
+            },
+            700
+        );
+    }
+
+
+    /* =====================================================
+       TIME GREETING
+    ===================================================== */
+
+    function getTimeGreeting() {
+
+        const hour =
+            new Date().getHours();
+
+        if (
+            hour >= 5 &&
+            hour < 12
+        ) {
+            return "Good morning";
+        }
+
+        if (
+            hour >= 12 &&
+            hour < 17
+        ) {
+            return "Good afternoon";
+        }
+
+        if (
+            hour >= 17 &&
+            hour < 21
+        ) {
+            return "Good evening";
+        }
+
+        return "Hello";
+    }
+
+
+    /* =====================================================
+       CREATE GREETING
+    ===================================================== */
+
+    function createWelcomeMessage() {
+
+        return (
+            `${getTimeGreeting()}. I'm Chaitrali Supali. ` +
+            `It's nice to meet you. ` +
+            `Whenever you're ready, we can begin the interview.`
+        );
+    }
+
+
+    /* =====================================================
+       CLEAR LISTENING TIMER
+    ===================================================== */
+
+    function clearListeningTimer() {
+
+        if (listeningTimer !== null) {
+
+            clearTimeout(
+                listeningTimer
+            );
+
+            listeningTimer = null;
+        }
+    }
+
+
+    /* =====================================================
+       UI STATE
+    ===================================================== */
+
+    function setState(
+        state,
+        message
+    ) {
+
+        orb.classList.remove(
+            "listening",
+            "thinking",
+            "speaking"
+        );
+
+        orbRing.classList.remove(
+            "listening"
+        );
+
+        orbGlow.classList.remove(
+            "listening"
+        );
+
+        if (state !== "idle") {
+
+            orb.classList.add(
+                state
+            );
+        }
+
+        if (state === "listening") {
+
+            orbRing.classList.add(
+                "listening"
+            );
+
+            orbGlow.classList.add(
+                "listening"
+            );
+        }
+
+        statusText.textContent =
+            message;
+
+        if (state === "listening") {
+
+            statusDot.style.background =
+                "#8ebda5";
+
+            orbGlow.style.opacity =
+                "0.8";
+
+        }
+
+        else if (state === "thinking") {
+
+            statusDot.style.background =
+                "#d5b46d";
+
+            orbGlow.style.opacity =
+                "0.65";
+
+        }
+
+        else if (state === "speaking") {
+
+            statusDot.style.background =
+                "#a18ac4";
+
+            orbGlow.style.opacity =
+                "0.8";
+
+        }
+
+        else {
+
+            statusDot.style.background =
+                "#9b8bc4";
+
+            orbGlow.style.opacity =
+                "0.45";
+        }
+    }
+
+
+    /* =====================================================
+       ADD CHAT MESSAGE
+    ===================================================== */
+
+    function addMessage(
+        sender,
+        text,
+        className
+    ) {
+
+        const message =
+            document.createElement(
+                "div"
+            );
+
+        message.className =
+            `message ${className}`;
+
+        const strong =
+            document.createElement(
+                "strong"
+            );
+
+        strong.textContent =
+            sender;
+
+        const content =
+            document.createElement(
+                "span"
+            );
+
+        content.textContent =
+            text;
+
+        message.appendChild(
+            strong
+        );
+
+        message.appendChild(
+            content
+        );
+
+        chat.appendChild(
+            message
+        );
+
+        chat.scrollTo({
+            top: chat.scrollHeight,
+            behavior: "smooth"
+        });
+    }
+
+
+    /* =====================================================
+       CANCEL SPEECH
+    ===================================================== */
+
+    function cancelSpeech() {
+
+        if (
+            "speechSynthesis"
+            in window
+        ) {
+
+            window.speechSynthesis.cancel();
+        }
+
+        isSpeaking = false;
+    }
+
+
+    /* =====================================================
+       STOP RECOGNITION
+    ===================================================== */
+
+    function stopRecognition() {
+
+        clearListeningTimer();
+
+        recognitionGeneration++;
+
+        const oldRecognition =
+            recognition;
+
+        recognition = null;
+
+        isListening = false;
+
+        if (oldRecognition) {
+
+            try {
+
+                oldRecognition.onstart =
+                    null;
+
+                oldRecognition.onresult =
+                    null;
+
+                oldRecognition.onerror =
+                    null;
+
+                oldRecognition.onend =
+                    null;
+
+                oldRecognition.stop();
+
+            }
+
+            catch (error) {
+
+                console.log(
+                    "Recognition stop:",
+                    error
+                );
+            }
+        }
+    }
+
+
+    /* =====================================================
+       ASK BACKEND
+    ===================================================== */
+
+    async function askQuestion(
+        questionFromVoice = null
+    ) {
+
+        if (
+            requestInProgress
+        ) {
+            return;
+        }
+
+        const question =
+            (
+                questionFromVoice !== null
+                    ? questionFromVoice
+                    : questionInput.value
+            )
+            .trim();
+
+        if (!question) {
+            return;
+        }
+
+        requestInProgress =
+            true;
+
+        stopRecognition();
+
+        addMessage(
+            "You",
+            question,
+            "user"
+        );
+
+        questionInput.value =
+            "";
+
+        setState(
+            "thinking",
+            "Thinking..."
+        );
+
+        try {
+
+            const response =
+                await fetch(
+                    `${BACKEND_URL}/ask`,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify({
+                                question:
+                                    question
+                            })
+                    }
+                );
+
+            if (!response.ok) {
+
+                let detail =
+                    "";
+
+                try {
+
+                    const errorData =
+                        await response.json();
+
+                    if (
+                        errorData &&
+                        errorData.detail
+                    ) {
+
+                        detail =
+                            ` — ${errorData.detail}`;
+                    }
+
+                }
+
+                catch (_) {
+                    /*
+                     * Ignore invalid
+                     * error JSON.
+                     */
+                }
+
+                throw new Error(
+                    `Backend request failed: ${response.status}${detail}`
+                );
+            }
+
+            const data =
+                await response.json();
+
+            const answer =
+                typeof data.answer === "string"
+                    ? data.answer.trim()
+                    : "";
+
+            if (!answer) {
+
+                throw new Error(
+                    "Backend returned an empty answer."
+                );
+            }
+
+            addMessage(
+                "Chaitrali Supali",
+                answer,
+                "bot"
+            );
+
+            speak(answer);
+        }
+
+        catch (error) {
+
+            console.error(
+                "Backend error:",
+                error
+            );
+
+            addMessage(
+                "System",
+                "I couldn't connect to the AI backend. Please make sure ChaitraliAI is running.",
+                "system"
+            );
+
+            setState(
+                "idle",
+                "Connection error"
+            );
+        }
+
+        finally {
+
+            requestInProgress =
+                false;
+        }
+    }
+
+
+    /* =====================================================
+       ENTER KEY
+    ===================================================== */
+
+    function handleEnter(
+        event
+    ) {
+
+        if (
+            event.key === "Enter"
+        ) {
+
+            event.preventDefault();
+
+            askQuestion();
+        }
+    }
+
+
+    /* =====================================================
+       START INTERVIEW
+    ===================================================== */
+
+    function startInterview() {
+
+        if (!SpeechRecognition) {
+
+            alert(
+                "Voice recognition is not supported in this browser. Please use Google Chrome."
+            );
+
+            setState(
+                "idle",
+                "Voice recognition unavailable"
+            );
+
+            return;
+        }
+
+        if (interviewActive) {
+            return;
+        }
+
+        interviewActive =
+            true;
+
+        startButton.textContent =
+            "Stop Voice Interview";
+
+        if (!greetingShown) {
+
+            const greeting =
+                createWelcomeMessage();
+
+            const firstMessage =
+                chat.querySelector(
+                    ".message.bot"
+                );
+
+            if (firstMessage) {
+
+                const content =
+                    firstMessage.querySelector(
+                        "span"
+                    );
+
+                if (content) {
+
+                    content.textContent =
+                        greeting;
+                }
+            }
+
+            greetingShown =
+                true;
+
+            speak(
+                greeting,
+                true
+            );
+        }
+
+        else {
+
+            setState(
+                "listening",
+                "Your turn..."
+            );
+
+            listeningTimer =
+                setTimeout(
+                    () => {
+
+                        if (
+                            interviewActive &&
+                            !isSpeaking &&
+                            !requestInProgress
+                        ) {
+
+                            startListening();
+                        }
+
+                    },
+                    500
+                );
+        }
+    }
+
+
+    /* =====================================================
+       STOP INTERVIEW
+    ===================================================== */
+
+    function stopInterview() {
+
+        interviewActive =
+            false;
+
+        clearListeningTimer();
+
+        stopRecognition();
+
+        cancelSpeech();
+
+        requestInProgress =
+            false;
+
+        startButton.textContent =
+            "Start Voice Interview";
+
+        setState(
+            "idle",
+            "Interview paused"
+        );
+    }
+
+
+    /* =====================================================
+       START LISTENING
+    ===================================================== */
+
+    function startListening() {
+
+        if (!interviewActive) {
+            return;
+        }
+
+        if (!SpeechRecognition) {
+
+            setState(
+                "idle",
+                "Voice recognition unavailable"
+            );
+
+            return;
+        }
+
+        if (
+            isListening ||
+            isSpeaking ||
+            requestInProgress
+        ) {
+
+            return;
+        }
+
+        const currentGeneration =
+            ++recognitionGeneration;
+
+        const currentRecognition =
+            new SpeechRecognition();
+
+        recognition =
+            currentRecognition;
+
+        currentRecognition.lang =
+            "en-IN";
+
+        currentRecognition.interimResults =
+            false;
+
+        currentRecognition.continuous =
+            false;
+
+        currentRecognition.maxAlternatives =
+            1;
+
+
+        currentRecognition.onstart =
+            function () {
+
+                if (
+                    currentGeneration !==
+                    recognitionGeneration
+                ) {
+                    return;
+                }
+
+                isListening =
+                    true;
+
+                setState(
+                    "listening",
+                    "Listening..."
+                );
+            };
+
+
+        currentRecognition.onresult =
+            function (event) {
+
+                if (
+                    currentGeneration !==
+                    recognitionGeneration
+                ) {
+                    return;
+                }
+
+                let transcript =
+                    "";
+
+                try {
+
+                    transcript =
+                        event
+                            .results[0][0]
+                            .transcript
+                            .trim();
+
+                }
+
+                catch (error) {
+
+                    console.error(
+                        "Transcript error:",
+                        error
+                    );
+                }
+
+                isListening =
+                    false;
+
+                if (transcript) {
+
+                    askQuestion(
+                        transcript
+                    );
+                }
+
+                else {
+
+                    setState(
+                        "idle",
+                        "I didn't hear anything"
+                    );
+                }
+            };
+
+
+        currentRecognition.onerror =
+            function (event) {
+
+                if (
+                    currentGeneration !==
+                    recognitionGeneration
+                ) {
+                    return;
+                }
+
+                console.error(
+                    "Speech recognition error:",
+                    event.error
+                );
+
+                isListening =
+                    false;
+
+                if (
+                    event.error ===
+                    "not-allowed"
+                ) {
+
+                    setState(
+                        "idle",
+                        "Microphone permission required"
+                    );
+
+                    return;
+                }
+
+                if (
+                    event.error ===
+                    "service-not-allowed"
+                ) {
+
+                    setState(
+                        "idle",
+                        "Speech recognition unavailable"
+                    );
+
+                    return;
+                }
+
+                if (
+                    event.error ===
+                    "no-speech"
+                ) {
+
+                    setState(
+                        "idle",
+                        "I didn't hear anything"
+                    );
+
+                    if (
+                        interviewActive &&
+                        !isSpeaking &&
+                        !requestInProgress
+                    ) {
+
+                        listeningTimer =
+                            setTimeout(
+                                () => {
+
+                                    if (
+                                        interviewActive &&
+                                        !isSpeaking &&
+                                        !requestInProgress &&
+                                        currentGeneration ===
+                                        recognitionGeneration
+                                    ) {
+
+                                        startListening();
+                                    }
+
+                                },
+                                900
+                            );
+                    }
+
+                    return;
+                }
+
+                if (
+                    event.error ===
+                    "aborted"
+                ) {
+
+                    return;
+                }
+
+                setState(
+                    "idle",
+                    "I couldn't hear that. Try again."
+                );
+            };
+
+
+        currentRecognition.onend =
+            function () {
+
+                if (
+                    currentGeneration !==
+                    recognitionGeneration
+                ) {
+                    return;
+                }
+
+                isListening =
+                    false;
+
+                if (
+                    recognition ===
+                    currentRecognition
+                ) {
+
+                    recognition =
+                        null;
+                }
+
+                if (
+                    interviewActive &&
+                    !isSpeaking &&
+                    !requestInProgress &&
+                    statusText.textContent ===
+                    "Listening..."
+                ) {
+
+                    setState(
+                        "idle",
+                        "Ready"
+                    );
+                }
+            };
+
+
+        try {
+
+            currentRecognition.start();
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Recognition start error:",
+                error
+            );
+
+            isListening =
+                false;
+
+            if (
+                recognition ===
+                currentRecognition
+            ) {
+
+                recognition =
+                    null;
+            }
+
+            if (
+                interviewActive &&
+                !requestInProgress
+            ) {
+
+                setState(
+                    "idle",
+                    "Microphone could not start"
+                );
+            }
+        }
+    }
+
+
+    /* =====================================================
+       FIND FEMALE VOICE
+    ===================================================== */
+
+    function findFemaleVoice() {
+
+        if (
+            !("speechSynthesis" in window)
+        ) {
+
+            return null;
+        }
+
+        const voices =
+            window.speechSynthesis
+                .getVoices();
+
+        if (!voices.length) {
+            return null;
+        }
+
+        const indianFemale =
+            voices.find(
+                voice => {
+
+                    const name =
+                        voice.name
+                            .toLowerCase();
+
+                    const lang =
+                        voice.lang
+                            .toLowerCase();
+
+                    return (
+                        lang.startsWith(
+                            "en-in"
+                        ) &&
+                        (
+                            /female/.test(name) ||
+                            /heera/.test(name) ||
+                            /priya/.test(name) ||
+                            /neerja/.test(name)
+                        )
+                    );
+                }
+            );
+
+        if (indianFemale) {
+            return indianFemale;
+        }
+
+        const femaleEnglish =
+            voices.find(
+                voice => {
+
+                    const name =
+                        voice.name
+                            .toLowerCase();
+
+                    const lang =
+                        voice.lang
+                            .toLowerCase();
+
+                    return (
+                        lang.startsWith(
+                            "en"
+                        ) &&
+                        (
+                            /female/.test(name) ||
+                            /samantha/.test(name) ||
+                            /zira/.test(name) ||
+                            /aria/.test(name) ||
+                            /jenny/.test(name) ||
+                            /susan/.test(name)
+                        )
+                    );
+                }
+            );
+
+        if (femaleEnglish) {
+            return femaleEnglish;
+        }
+
+        const indianVoice =
+            voices.find(
+                voice =>
+                    voice.lang
+                        .toLowerCase()
+                        .startsWith(
+                            "en-in"
+                        )
+            );
+
+        if (indianVoice) {
+            return indianVoice;
+        }
+
+        const englishVoice =
+            voices.find(
+                voice =>
+                    voice.lang
+                        .toLowerCase()
+                        .startsWith(
+                            "en"
+                        )
+            );
+
+        if (englishVoice) {
+            return englishVoice;
+        }
+
+        return voices[0];
+    }
+
+
+    /* =====================================================
+       TEXT TO SPEECH
+    ===================================================== */
+
+    function speak(
+        text,
+        isGreeting = false
+    ) {
+
+        if (
+            !("speechSynthesis" in window)
+        ) {
+
+            isSpeaking =
+                false;
+
+            setState(
+                "idle",
+                "Voice output is not supported"
+            );
+
+            if (interviewActive) {
+
+                listeningTimer =
+                    setTimeout(
+                        () => {
+
+                            if (
+                                interviewActive &&
+                                !requestInProgress
+                            ) {
+
+                                startListening();
+                            }
+
+                        },
+                        500
+                    );
+            }
+
+            return;
+        }
+
+        window.speechSynthesis.cancel();
+
+        isSpeaking =
+            true;
+
+        setState(
+            "speaking",
+            isGreeting
+                ? "Greeting..."
+                : "Speaking..."
+        );
+
+        const utterance =
+            new SpeechSynthesisUtterance(
+                text
+            );
+
+        utterance.lang =
+            "en-IN";
+
+        utterance.rate =
+            0.86;
+
+        utterance.pitch =
+            1.08;
+
+        utterance.volume =
+            1;
+
+        const voice =
+            findFemaleVoice();
+
+        if (voice) {
+
+            utterance.voice =
+                voice;
+        }
+
+        utterance.onstart =
+            function () {
+
+                isSpeaking =
+                    true;
+
+                setState(
+                    "speaking",
+                    isGreeting
+                        ? "Greeting..."
+                        : "Speaking..."
+                );
+            };
+
+        utterance.onend =
+            function () {
+
+                isSpeaking =
+                    false;
+
+                if (!interviewActive) {
+
+                    setState(
+                        "idle",
+                        "Ready"
+                    );
+
+                    return;
+                }
+
+                setState(
+                    "listening",
+                    "Your turn..."
+                );
+
+                listeningTimer =
+                    setTimeout(
+                        () => {
+
+                            if (
+                                interviewActive &&
+                                !isSpeaking &&
+                                !requestInProgress
+                            ) {
+
+                                startListening();
+                            }
+
+                        },
+                        550
+                    );
+            };
+
+        utterance.onerror =
+            function (error) {
+
+                console.error(
+                    "Speech synthesis error:",
+                    error
+                );
+
+                isSpeaking =
+                    false;
+
+                if (!interviewActive) {
+
+                    setState(
+                        "idle",
+                        "Ready"
+                    );
+
+                    return;
+                }
+
+                setState(
+                    "listening",
+                    "Your turn..."
+                );
+
+                listeningTimer =
+                    setTimeout(
+                        () => {
+
+                            if (
+                                interviewActive &&
+                                !isSpeaking &&
+                                !requestInProgress
+                            ) {
+
+                                startListening();
+                            }
+
+                        },
+                        500
+                    );
+            };
+
+        window.speechSynthesis.speak(
+            utterance
+        );
+    }
+
+
+    /* =====================================================
+       RESET INTERVIEW
+    ===================================================== */
+
+    async function resetInterview() {
+
+        interviewActive =
+            false;
+
+        clearListeningTimer();
+
+        stopRecognition();
+
+        cancelSpeech();
+
+        isListening =
+            false;
+
+        isSpeaking =
+            false;
+
+        requestInProgress =
+            false;
+
+        greetingShown =
+            false;
+
+        setState(
+            "thinking",
+            "Resetting..."
+        );
+
+        try {
+
+            const response =
+                await fetch(
+                    `${BACKEND_URL}/reset`,
+                    {
+                        method: "POST"
+                    }
+                );
+
+            if (!response.ok) {
+
+                console.warn(
+                    "Backend reset returned:",
+                    response.status
+                );
+            }
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Reset error:",
+                error
+            );
+        }
+
+        chat.innerHTML = `
+            <div class="message bot">
+                <strong>Chaitrali Supali</strong>
+                <span>
+                    Welcome. Start the interview whenever you're ready.
+                </span>
+            </div>
+        `;
+
+        startButton.textContent =
+            "Start Voice Interview";
+
+        setState(
+            "idle",
+            "Ready to begin"
+        );
+    }
+
+
+    /* =====================================================
+       LOAD SPEECH VOICES
+    ===================================================== */
+
+    function loadVoices() {
+
+        if (
+            !("speechSynthesis" in window)
+        ) {
+            return;
+        }
+
+        const voices =
+            window.speechSynthesis
+                .getVoices();
+
+        if (voices.length) {
+
+            console.log(
+                "Available voices:",
+                voices.map(
+                    voice =>
+                        `${voice.name} (${voice.lang})`
+                )
+            );
+        }
+    }
+
+
+    if (
+        "speechSynthesis"
+        in window
+    ) {
+
+        loadVoices();
+
+        window.speechSynthesis
+            .onvoiceschanged =
+            loadVoices;
+    }
+
+
+    /* =====================================================
+       BUTTON EVENTS
+    ===================================================== */
+
+    beginButton.addEventListener(
+        "click",
+        beginExperience
+    );
+
+    startButton.addEventListener(
+        "click",
+        function () {
+
+            if (interviewActive) {
+
+                stopInterview();
+
+            }
+
+            else {
+
+                startInterview();
+            }
+        }
+    );
+
+    askButton.addEventListener(
+        "click",
+        function () {
+
+            askQuestion();
+        }
+    );
+
+    resetButton.addEventListener(
+        "click",
+        function () {
+
+            resetInterview();
+        }
+    );
+
+    questionInput.addEventListener(
+        "keydown",
+        handleEnter
+    );
+
+
+    /* =====================================================
+       INITIAL STATE
+    ===================================================== */
+
+    setState(
+        "idle",
+        "Ready to begin"
+    );
+
+
+    /* =====================================================
+       CONSOLE INFORMATION
+    ===================================================== */
+
+    console.log(
+        "ChaitraliAI frontend loaded."
+    );
+
+    console.log(
+        "Backend:",
+        BACKEND_URL
+    );
+
+    console.log(
+        "Speech Recognition supported:",
+        Boolean(SpeechRecognition)
+    );
+
+</script>
+
+
+</body>
+
+</html>
