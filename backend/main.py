@@ -201,7 +201,7 @@ def ask_chaitrali(data: Question):
 
 
         response = client.models.generate_content(
-            model="gemini-3.6-flash",
+            model="gemini-3.7-flash",
             contents=[
                 SYSTEM_PROMPT,
                 PERSONAL_KNOWLEDGE,
