@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-
+```
 <title>ChaitraliAI - AI Voice Interview Agent</title>
 
 <style>
@@ -894,6 +894,8 @@
 
         white-space: pre-wrap;
 
+        overflow-wrap: anywhere;
+
         animation:
             messageIn
             0.25s
@@ -1260,13 +1262,13 @@
     }
 
 </style>
-
+```
 
 </head>
 
 <body>
 
-
+```
 <div class="background">
 
     <div class="blob one"></div>
@@ -1450,6 +1452,7 @@
             <div
                 class="chat"
                 id="chat"
+                aria-live="polite"
             >
 
                 <div class="message bot">
@@ -1475,6 +1478,7 @@
                         id="question"
                         placeholder="Type your question instead..."
                         autocomplete="off"
+                        aria-label="Type your question"
                     >
 
                 </div>
@@ -1533,6 +1537,9 @@
     const BACKEND_URL =
         "https://chaitraliai.onrender.com";
 
+    const REQUEST_TIMEOUT =
+        45000;
+
 
     /* =====================================================
        DOM ELEMENTS
@@ -1576,10 +1583,29 @@
 
 
     /* =====================================================
+       BROWSER SPEECH SUPPORT
+    ===================================================== */
+
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+    const speechRecognitionSupported =
+        Boolean(SpeechRecognition);
+
+    const speechSynthesisSupported =
+        "speechSynthesis" in window;
+
+
+    /* =====================================================
        STATE
     ===================================================== */
 
     let recognition = null;
+
+    let recognitionGeneration = 0;
+
+    let interviewGeneration = 0;
 
     let interviewActive = false;
 
@@ -1591,18 +1617,62 @@
 
     let greetingShown = false;
 
-    let recognitionGeneration = 0;
-
     let listeningTimer = null;
+
+    let currentRequestController = null;
 
 
     /* =====================================================
-       BROWSER SUPPORT
+       SAFE TIMER
     ===================================================== */
 
-    const SpeechRecognition =
-        window.SpeechRecognition ||
-        window.webkitSpeechRecognition;
+    function clearListeningTimer() {
+
+        if (listeningTimer !== null) {
+
+            clearTimeout(
+                listeningTimer
+            );
+
+            listeningTimer = null;
+        }
+    }
+
+
+    function scheduleListening(
+        delay = 500,
+        generation = interviewGeneration
+    ) {
+
+        clearListeningTimer();
+
+        listeningTimer =
+            setTimeout(
+                () => {
+
+                    listeningTimer = null;
+
+                    if (
+                        generation !==
+                        interviewGeneration
+                    ) {
+                        return;
+                    }
+
+                    if (
+                        interviewActive &&
+                        !isSpeaking &&
+                        !requestInProgress &&
+                        !isListening
+                    ) {
+
+                        startListening();
+                    }
+
+                },
+                delay
+            );
+    }
 
 
     /* =====================================================
@@ -1678,23 +1748,6 @@
 
 
     /* =====================================================
-       CLEAR LISTENING TIMER
-    ===================================================== */
-
-    function clearListeningTimer() {
-
-        if (listeningTimer !== null) {
-
-            clearTimeout(
-                listeningTimer
-            );
-
-            listeningTimer = null;
-        }
-    }
-
-
-    /* =====================================================
        UI STATE
     ===================================================== */
 
@@ -1733,12 +1786,6 @@
             orbGlow.classList.add(
                 "listening"
             );
-        }
-
-        statusText.textContent =
-            message;
-
-        if (state === "listening") {
 
             statusDot.style.background =
                 "#8ebda5";
@@ -1776,6 +1823,9 @@
             orbGlow.style.opacity =
                 "0.45";
         }
+
+        statusText.textContent =
+            message;
     }
 
 
@@ -1839,11 +1889,22 @@
     function cancelSpeech() {
 
         if (
-            "speechSynthesis"
-            in window
+            speechSynthesisSupported
         ) {
 
-            window.speechSynthesis.cancel();
+            try {
+
+                window.speechSynthesis.cancel();
+
+            }
+
+            catch (error) {
+
+                console.warn(
+                    "Speech cancellation error:",
+                    error
+                );
+            }
         }
 
         isSpeaking = false;
@@ -1863,9 +1924,11 @@
         const oldRecognition =
             recognition;
 
-        recognition = null;
+        recognition =
+            null;
 
-        isListening = false;
+        isListening =
+            false;
 
         if (oldRecognition) {
 
@@ -1899,7 +1962,37 @@
 
 
     /* =====================================================
-       ASK BACKEND
+       CANCEL BACKEND REQUEST
+    ===================================================== */
+
+    function cancelBackendRequest() {
+
+        if (
+            currentRequestController
+        ) {
+
+            try {
+
+                currentRequestController.abort();
+
+            }
+
+            catch (error) {
+
+                console.warn(
+                    "Request cancellation error:",
+                    error
+                );
+            }
+
+            currentRequestController =
+                null;
+        }
+    }
+
+
+    /* =====================================================
+       BACKEND REQUEST
     ===================================================== */
 
     async function askQuestion(
@@ -1924,6 +2017,9 @@
             return;
         }
 
+        const requestGeneration =
+            interviewGeneration;
+
         requestInProgress =
             true;
 
@@ -1943,6 +2039,22 @@
             "Thinking..."
         );
 
+        const controller =
+            new AbortController();
+
+        currentRequestController =
+            controller;
+
+        const timeoutId =
+            setTimeout(
+                () => {
+
+                    controller.abort();
+
+                },
+                REQUEST_TIMEOUT
+            );
+
         try {
 
             const response =
@@ -1953,6 +2065,9 @@
 
                         headers: {
                             "Content-Type":
+                                "application/json",
+
+                            "Accept":
                                 "application/json"
                         },
 
@@ -1960,7 +2075,10 @@
                             JSON.stringify({
                                 question:
                                     question
-                            })
+                            }),
+
+                        signal:
+                            controller.signal
                     }
                 );
 
@@ -1976,7 +2094,8 @@
 
                     if (
                         errorData &&
-                        errorData.detail
+                        typeof errorData.detail ===
+                            "string"
                     ) {
 
                         detail =
@@ -1986,10 +2105,7 @@
                 }
 
                 catch (_) {
-                    /*
-                     * Ignore invalid
-                     * error JSON.
-                     */
+                    /* Ignore invalid JSON */
                 }
 
                 throw new Error(
@@ -1999,6 +2115,14 @@
 
             const data =
                 await response.json();
+
+            if (
+                requestGeneration !==
+                interviewGeneration
+            ) {
+
+                return;
+            }
 
             const answer =
                 typeof data.answer === "string"
@@ -2018,19 +2142,40 @@
                 "bot"
             );
 
-            speak(answer);
+            speak(
+                answer,
+                false,
+                requestGeneration
+            );
         }
 
         catch (error) {
+
+            if (
+                error &&
+                error.name ===
+                    "AbortError"
+            ) {
+
+                return;
+            }
 
             console.error(
                 "Backend error:",
                 error
             );
 
+            if (
+                requestGeneration !==
+                interviewGeneration
+            ) {
+
+                return;
+            }
+
             addMessage(
                 "System",
-                "I couldn't connect to the AI backend. Please make sure ChaitraliAI is running.",
+                "I couldn't connect to the AI backend. Please try again in a moment.",
                 "system"
             );
 
@@ -2041,6 +2186,19 @@
         }
 
         finally {
+
+            clearTimeout(
+                timeoutId
+            );
+
+            if (
+                currentRequestController ===
+                controller
+            ) {
+
+                currentRequestController =
+                    null;
+            }
 
             requestInProgress =
                 false;
@@ -2073,31 +2231,44 @@
 
     function startInterview() {
 
-        if (!SpeechRecognition) {
+        if (
+            interviewActive
+        ) {
+            return;
+        }
 
-            alert(
-                "Voice recognition is not supported in this browser. Please use Google Chrome."
-            );
+        if (
+            !speechRecognitionSupported
+        ) {
 
             setState(
                 "idle",
                 "Voice recognition unavailable"
             );
 
-            return;
-        }
+            addMessage(
+                "System",
+                "Voice recognition is not supported in this browser. Please use Google Chrome.",
+                "system"
+            );
 
-        if (interviewActive) {
             return;
         }
 
         interviewActive =
             true;
 
+        interviewGeneration++;
+
+        const currentInterview =
+            interviewGeneration;
+
         startButton.textContent =
             "Stop Voice Interview";
 
-        if (!greetingShown) {
+        if (
+            !greetingShown
+        ) {
 
             const greeting =
                 createWelcomeMessage();
@@ -2126,8 +2297,10 @@
 
             speak(
                 greeting,
-                true
+                true,
+                currentInterview
             );
+
         }
 
         else {
@@ -2137,22 +2310,10 @@
                 "Your turn..."
             );
 
-            listeningTimer =
-                setTimeout(
-                    () => {
-
-                        if (
-                            interviewActive &&
-                            !isSpeaking &&
-                            !requestInProgress
-                        ) {
-
-                            startListening();
-                        }
-
-                    },
-                    500
-                );
+            scheduleListening(
+                500,
+                currentInterview
+            );
         }
     }
 
@@ -2166,14 +2327,13 @@
         interviewActive =
             false;
 
+        interviewGeneration++;
+
         clearListeningTimer();
 
         stopRecognition();
 
         cancelSpeech();
-
-        requestInProgress =
-            false;
 
         startButton.textContent =
             "Start Voice Interview";
@@ -2191,11 +2351,15 @@
 
     function startListening() {
 
-        if (!interviewActive) {
+        if (
+            !interviewActive
+        ) {
             return;
         }
 
-        if (!SpeechRecognition) {
+        if (
+            !speechRecognitionSupported
+        ) {
 
             setState(
                 "idle",
@@ -2210,12 +2374,22 @@
             isSpeaking ||
             requestInProgress
         ) {
-
             return;
         }
 
+        clearListeningTimer();
+
+        /*
+         * Completely invalidate any previous
+         * recognition object.
+         */
+        stopRecognition();
+
         const currentGeneration =
             ++recognitionGeneration;
+
+        const currentInterview =
+            interviewGeneration;
 
         const currentRecognition =
             new SpeechRecognition();
@@ -2236,12 +2410,23 @@
             1;
 
 
+        /* =================================================
+           RECOGNITION START
+        ================================================= */
+
         currentRecognition.onstart =
             function () {
 
                 if (
                     currentGeneration !==
                     recognitionGeneration
+                ) {
+                    return;
+                }
+
+                if (
+                    currentInterview !==
+                    interviewGeneration
                 ) {
                     return;
                 }
@@ -2256,12 +2441,23 @@
             };
 
 
+        /* =================================================
+           RECOGNITION RESULT
+        ================================================= */
+
         currentRecognition.onresult =
             function (event) {
 
                 if (
                     currentGeneration !==
                     recognitionGeneration
+                ) {
+                    return;
+                }
+
+                if (
+                    currentInterview !==
+                    interviewGeneration
                 ) {
                     return;
                 }
@@ -2290,11 +2486,22 @@
                 isListening =
                     false;
 
+                /*
+                 * Invalidate this recognition
+                 * immediately so no duplicate
+                 * callback can restart it.
+                 */
+                recognitionGeneration++;
+
+                recognition =
+                    null;
+
                 if (transcript) {
 
                     askQuestion(
                         transcript
                     );
+
                 }
 
                 else {
@@ -2303,9 +2510,25 @@
                         "idle",
                         "I didn't hear anything"
                     );
+
+                    if (
+                        interviewActive &&
+                        currentInterview ===
+                            interviewGeneration
+                    ) {
+
+                        scheduleListening(
+                            900,
+                            currentInterview
+                        );
+                    }
                 }
             };
 
+
+        /* =================================================
+           RECOGNITION ERROR
+        ================================================= */
 
         currentRecognition.onerror =
             function (event) {
@@ -2313,6 +2536,13 @@
                 if (
                     currentGeneration !==
                     recognitionGeneration
+                ) {
+                    return;
+                }
+
+                if (
+                    currentInterview !==
+                    interviewGeneration
                 ) {
                     return;
                 }
@@ -2326,13 +2556,30 @@
                     false;
 
                 if (
+                    recognition ===
+                    currentRecognition
+                ) {
+
+                    recognition =
+                        null;
+                }
+
+                if (
                     event.error ===
-                    "not-allowed"
+                    "not-allowed" ||
+                    event.error ===
+                    "permission-denied"
                 ) {
 
                     setState(
                         "idle",
                         "Microphone permission required"
+                    );
+
+                    addMessage(
+                        "System",
+                        "Please allow microphone access in Chrome and try again.",
+                        "system"
                     );
 
                     return;
@@ -2367,24 +2614,10 @@
                         !requestInProgress
                     ) {
 
-                        listeningTimer =
-                            setTimeout(
-                                () => {
-
-                                    if (
-                                        interviewActive &&
-                                        !isSpeaking &&
-                                        !requestInProgress &&
-                                        currentGeneration ===
-                                        recognitionGeneration
-                                    ) {
-
-                                        startListening();
-                                    }
-
-                                },
-                                900
-                            );
+                        scheduleListening(
+                            900,
+                            currentInterview
+                        );
                     }
 
                     return;
@@ -2398,6 +2631,19 @@
                     return;
                 }
 
+                if (
+                    event.error ===
+                    "network"
+                ) {
+
+                    setState(
+                        "idle",
+                        "Speech service network error"
+                    );
+
+                    return;
+                }
+
                 setState(
                     "idle",
                     "I couldn't hear that. Try again."
@@ -2405,12 +2651,23 @@
             };
 
 
+        /* =================================================
+           RECOGNITION END
+        ================================================= */
+
         currentRecognition.onend =
             function () {
 
                 if (
                     currentGeneration !==
                     recognitionGeneration
+                ) {
+                    return;
+                }
+
+                if (
+                    currentInterview !==
+                    interviewGeneration
                 ) {
                     return;
                 }
@@ -2427,21 +2684,19 @@
                         null;
                 }
 
-                if (
-                    interviewActive &&
-                    !isSpeaking &&
-                    !requestInProgress &&
-                    statusText.textContent ===
-                    "Listening..."
-                ) {
-
-                    setState(
-                        "idle",
-                        "Ready"
-                    );
-                }
+                /*
+                 * Do NOT blindly restart here.
+                 *
+                 * The result/error handlers are
+                 * responsible for deciding whether
+                 * another listening cycle is needed.
+                 */
             };
 
+
+        /* =================================================
+           START RECOGNITION
+        ================================================= */
 
         try {
 
@@ -2470,6 +2725,8 @@
 
             if (
                 interviewActive &&
+                currentInterview ===
+                    interviewGeneration &&
                 !requestInProgress
             ) {
 
@@ -2477,21 +2734,25 @@
                     "idle",
                     "Microphone could not start"
                 );
+
+                scheduleListening(
+                    1000,
+                    currentInterview
+                );
             }
         }
     }
 
 
     /* =====================================================
-       FIND FEMALE VOICE
+       FIND BEST AVAILABLE FEMALE VOICE
     ===================================================== */
 
     function findFemaleVoice() {
 
         if (
-            !("speechSynthesis" in window)
+            !speechSynthesisSupported
         ) {
-
             return null;
         }
 
@@ -2499,7 +2760,10 @@
             window.speechSynthesis
                 .getVoices();
 
-        if (!voices.length) {
+        if (
+            !voices ||
+            !voices.length
+        ) {
             return null;
         }
 
@@ -2508,12 +2772,18 @@
                 voice => {
 
                     const name =
-                        voice.name
-                            .toLowerCase();
+                        (
+                            voice.name ||
+                            ""
+                        )
+                        .toLowerCase();
 
                     const lang =
-                        voice.lang
-                            .toLowerCase();
+                        (
+                            voice.lang ||
+                            ""
+                        )
+                        .toLowerCase();
 
                     return (
                         lang.startsWith(
@@ -2523,7 +2793,8 @@
                             /female/.test(name) ||
                             /heera/.test(name) ||
                             /priya/.test(name) ||
-                            /neerja/.test(name)
+                            /neerja/.test(name) ||
+                            /raveena/.test(name)
                         )
                     );
                 }
@@ -2533,17 +2804,40 @@
             return indianFemale;
         }
 
+        const indianVoice =
+            voices.find(
+                voice =>
+                    (
+                        voice.lang ||
+                        ""
+                    )
+                    .toLowerCase()
+                    .startsWith(
+                        "en-in"
+                    )
+            );
+
+        if (indianVoice) {
+            return indianVoice;
+        }
+
         const femaleEnglish =
             voices.find(
                 voice => {
 
                     const name =
-                        voice.name
-                            .toLowerCase();
+                        (
+                            voice.name ||
+                            ""
+                        )
+                        .toLowerCase();
 
                     const lang =
-                        voice.lang
-                            .toLowerCase();
+                        (
+                            voice.lang ||
+                            ""
+                        )
+                        .toLowerCase();
 
                     return (
                         lang.startsWith(
@@ -2565,28 +2859,17 @@
             return femaleEnglish;
         }
 
-        const indianVoice =
-            voices.find(
-                voice =>
-                    voice.lang
-                        .toLowerCase()
-                        .startsWith(
-                            "en-in"
-                        )
-            );
-
-        if (indianVoice) {
-            return indianVoice;
-        }
-
         const englishVoice =
             voices.find(
                 voice =>
-                    voice.lang
-                        .toLowerCase()
-                        .startsWith(
-                            "en"
-                        )
+                    (
+                        voice.lang ||
+                        ""
+                    )
+                    .toLowerCase()
+                    .startsWith(
+                        "en"
+                    )
             );
 
         if (englishVoice) {
@@ -2603,44 +2886,67 @@
 
     function speak(
         text,
-        isGreeting = false
+        isGreeting = false,
+        expectedInterviewGeneration =
+            interviewGeneration
     ) {
 
         if (
-            !("speechSynthesis" in window)
+            !speechSynthesisSupported
         ) {
 
             isSpeaking =
                 false;
 
-            setState(
-                "idle",
-                "Voice output is not supported"
-            );
+            if (
+                interviewActive &&
+                expectedInterviewGeneration ===
+                    interviewGeneration
+            ) {
 
-            if (interviewActive) {
+                setState(
+                    "listening",
+                    "Your turn..."
+                );
 
-                listeningTimer =
-                    setTimeout(
-                        () => {
+                scheduleListening(
+                    500,
+                    expectedInterviewGeneration
+                );
 
-                            if (
-                                interviewActive &&
-                                !requestInProgress
-                            ) {
+            }
 
-                                startListening();
-                            }
+            else {
 
-                        },
-                        500
-                    );
+                setState(
+                    "idle",
+                    "Voice output unavailable"
+                );
             }
 
             return;
         }
 
-        window.speechSynthesis.cancel();
+        if (
+            expectedInterviewGeneration !==
+            interviewGeneration
+        ) {
+            return;
+        }
+
+        try {
+
+            window.speechSynthesis.cancel();
+
+        }
+
+        catch (error) {
+
+            console.warn(
+                "Speech synthesis cancel:",
+                error
+            );
+        }
 
         isSpeaking =
             true;
@@ -2678,8 +2984,17 @@
                 voice;
         }
 
+
         utterance.onstart =
             function () {
+
+                if (
+                    expectedInterviewGeneration !==
+                    interviewGeneration
+                ) {
+
+                    return;
+                }
 
                 isSpeaking =
                     true;
@@ -2692,13 +3007,24 @@
                 );
             };
 
+
         utterance.onend =
             function () {
+
+                if (
+                    expectedInterviewGeneration !==
+                    interviewGeneration
+                ) {
+
+                    return;
+                }
 
                 isSpeaking =
                     false;
 
-                if (!interviewActive) {
+                if (
+                    !interviewActive
+                ) {
 
                     setState(
                         "idle",
@@ -2713,23 +3039,12 @@
                     "Your turn..."
                 );
 
-                listeningTimer =
-                    setTimeout(
-                        () => {
-
-                            if (
-                                interviewActive &&
-                                !isSpeaking &&
-                                !requestInProgress
-                            ) {
-
-                                startListening();
-                            }
-
-                        },
-                        550
-                    );
+                scheduleListening(
+                    550,
+                    expectedInterviewGeneration
+                );
             };
+
 
         utterance.onerror =
             function (error) {
@@ -2739,10 +3054,20 @@
                     error
                 );
 
+                if (
+                    expectedInterviewGeneration !==
+                    interviewGeneration
+                ) {
+
+                    return;
+                }
+
                 isSpeaking =
                     false;
 
-                if (!interviewActive) {
+                if (
+                    !interviewActive
+                ) {
 
                     setState(
                         "idle",
@@ -2757,27 +3082,48 @@
                     "Your turn..."
                 );
 
-                listeningTimer =
-                    setTimeout(
-                        () => {
-
-                            if (
-                                interviewActive &&
-                                !isSpeaking &&
-                                !requestInProgress
-                            ) {
-
-                                startListening();
-                            }
-
-                        },
-                        500
-                    );
+                scheduleListening(
+                    500,
+                    expectedInterviewGeneration
+                );
             };
 
-        window.speechSynthesis.speak(
-            utterance
-        );
+
+        try {
+
+            window.speechSynthesis.speak(
+                utterance
+            );
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Speech synthesis start error:",
+                error
+            );
+
+            isSpeaking =
+                false;
+
+            if (
+                interviewActive &&
+                expectedInterviewGeneration ===
+                    interviewGeneration
+            ) {
+
+                setState(
+                    "listening",
+                    "Your turn..."
+                );
+
+                scheduleListening(
+                    500,
+                    expectedInterviewGeneration
+                );
+            }
+        }
     }
 
 
@@ -2787,7 +3133,16 @@
 
     async function resetInterview() {
 
+        /*
+         * Immediately invalidate all old
+         * recognition, speech and backend callbacks.
+         */
+        interviewGeneration++;
+
         interviewActive =
+            false;
+
+        greetingShown =
             false;
 
         clearListeningTimer();
@@ -2795,6 +3150,8 @@
         stopRecognition();
 
         cancelSpeech();
+
+        cancelBackendRequest();
 
         isListening =
             false;
@@ -2805,8 +3162,8 @@
         requestInProgress =
             false;
 
-        greetingShown =
-            false;
+        startButton.textContent =
+            "Start Voice Interview";
 
         setState(
             "thinking",
@@ -2819,7 +3176,12 @@
                 await fetch(
                     `${BACKEND_URL}/reset`,
                     {
-                        method: "POST"
+                        method: "POST",
+
+                        headers: {
+                            "Accept":
+                                "application/json"
+                        }
                     }
                 );
 
@@ -2835,8 +3197,13 @@
 
         catch (error) {
 
-            console.error(
-                "Reset error:",
+            /*
+             * Resetting the local UI should
+             * still succeed even if the backend
+             * is temporarily unavailable.
+             */
+            console.warn(
+                "Backend reset error:",
                 error
             );
         }
@@ -2849,9 +3216,6 @@
                 </span>
             </div>
         `;
-
-        startButton.textContent =
-            "Start Voice Interview";
 
         setState(
             "idle",
@@ -2867,31 +3231,49 @@
     function loadVoices() {
 
         if (
-            !("speechSynthesis" in window)
+            !speechSynthesisSupported
         ) {
             return;
         }
 
-        const voices =
-            window.speechSynthesis
-                .getVoices();
+        try {
 
-        if (voices.length) {
+            const voices =
+                window.speechSynthesis
+                    .getVoices();
 
-            console.log(
-                "Available voices:",
-                voices.map(
-                    voice =>
-                        `${voice.name} (${voice.lang})`
-                )
+            if (
+                voices &&
+                voices.length
+            ) {
+
+                console.log(
+                    "Available voices:",
+                    voices.map(
+                        voice =>
+                            `${voice.name} (${voice.lang})`
+                    )
+                );
+            }
+
+        }
+
+        catch (error) {
+
+            console.warn(
+                "Voice loading error:",
+                error
             );
         }
     }
 
 
+    /* =====================================================
+       SPEECH VOICE INITIALIZATION
+    ===================================================== */
+
     if (
-        "speechSynthesis"
-        in window
+        speechSynthesisSupported
     ) {
 
         loadVoices();
@@ -2911,11 +3293,14 @@
         beginExperience
     );
 
+
     startButton.addEventListener(
         "click",
         function () {
 
-            if (interviewActive) {
+            if (
+                interviewActive
+            ) {
 
                 stopInterview();
 
@@ -2928,6 +3313,7 @@
         }
     );
 
+
     askButton.addEventListener(
         "click",
         function () {
@@ -2936,6 +3322,7 @@
         }
     );
 
+
     resetButton.addEventListener(
         "click",
         function () {
@@ -2943,6 +3330,7 @@
             resetInterview();
         }
     );
+
 
     questionInput.addEventListener(
         "keydown",
@@ -2975,11 +3363,16 @@
 
     console.log(
         "Speech Recognition supported:",
-        Boolean(SpeechRecognition)
+        speechRecognitionSupported
+    );
+
+    console.log(
+        "Speech Synthesis supported:",
+        speechSynthesisSupported
     );
 
 </script>
-
+```
 
 </body>
 
