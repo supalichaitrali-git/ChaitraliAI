@@ -157,7 +157,7 @@ for a realistic interview.
         try:
 
             response = client.models.generate_content(
-                model="gemini-3.7-flash",
+                model="gemini-3.1-flash-lite",
                 contents=[
                     SYSTEM_PROMPT,
                     PERSONAL_KNOWLEDGE,
