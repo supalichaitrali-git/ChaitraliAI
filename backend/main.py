@@ -150,9 +150,6 @@ Keep your response conversational and appropriate
 for a realistic interview.
 """
 
-    # Try Gemini up to 3 times.
-    # This helps with temporary 503/high-demand errors.
-
     last_error = None
 
     for attempt in range(3):
@@ -169,7 +166,6 @@ for a realistic interview.
             )
 
             if response.text:
-
                 return response.text.strip()
 
             last_error = "Gemini returned an empty response."
@@ -183,10 +179,13 @@ for a realistic interview.
                 f"(attempt {attempt + 1}/3): {error}"
             )
 
-            # Wait before retrying.
+            # Stop immediately when the Gemini quota is exhausted.
+            if "429" in str(error):
+                break
+
+            # Retry only temporary server/high-demand errors.
             if attempt < 2:
                 time.sleep(2)
-
 
     return None
 
@@ -297,9 +296,9 @@ def ask_chaitrali(data: Question):
         if answer is None:
 
             answer = (
-                "I'm temporarily unable to connect to my AI "
-                "reasoning service. Please try asking the question "
-                "again in a moment."
+                "I've reached my current AI request limit. "
+                "Please try again later or come back tomorrow "
+                "when the API quota is available again."
             )
 
 
