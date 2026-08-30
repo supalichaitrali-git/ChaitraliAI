@@ -8,17 +8,23 @@ The application uses a **FastAPI backend**, **Google Gemini API** for AI-generat
 
 ---
 
-## 🚀 Live Application
+## 🌐 Live Application
 
-**Backend API:**
+### Frontend — Live Website
+
+https://chaitraliai-website.onrender.com/
+
+This is the main user-facing ChaitraliAI website where users can interact with the AI interview agent.
+
+### Backend API
 
 https://chaitraliai.onrender.com
 
-**API Documentation:**
+### API Documentation
 
 https://chaitraliai.onrender.com/docs
 
-**OpenAPI Specification:**
+### OpenAPI Specification
 
 https://chaitraliai.onrender.com/openapi.json
 
